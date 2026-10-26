@@ -1,0 +1,22 @@
+{
+  "speakers": [{"id": 1, "name": "Mara"}],
+  "events": [
+    {"id": 501, "name": "The old lantern", "rootNodeId": 501001, "isRandomDate": false,
+     "priority": "middle", "rank": "C", "section": "none",
+     "conditionSet": {"operator": "and", "left": {"conditions": []},
+       "right": {"conditions": [{"type": "defaults", "target": "EVENT_501", "targetType": "event", "compareType": "equal", "value": 0}]}}}
+  ],
+  "nodes": [
+    {"id": 501001, "type": "text", "speakerId": 1, "text": "Found this in the back room. Want it?", "nextNodeId": 501002},
+    {"id": 501002, "type": "option", "optionText": "Take the lantern?", "text": "Mara holds it out.", "nextNodeId": 501005,
+     "options": [
+       {"text": "Take it", "nextNodeId": 501003},
+       {"text": "Leave it", "nextNodeId": 501004}]},
+    {"id": 501003, "type": "text", "speakerId": 1, "text": "It's yours.", "nextNodeId": 501005,
+     "changer": {"funcCode": "ACQUIRE_ITEM", "args": [601, 1],
+       "changes": [{"type": "set", "target": "LANTERN_CHOICE", "value": 1}]}},
+    {"id": 501004, "type": "text", "speakerId": 1, "text": "Suit yourself.", "nextNodeId": 501005,
+     "changer": {"funcCode": "", "changes": [{"type": "set", "target": "LANTERN_CHOICE", "value": 2}]}},
+    {"id": 501005, "type": "last", "text": "The day goes on."}
+  ]
+}

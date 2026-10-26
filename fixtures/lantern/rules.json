@@ -1,0 +1,15 @@
+{
+  "events": {
+    "openingEventIds": [501],
+    "randomEventChancePerTick": 0
+  },
+  "hp": {
+    "initial": 100
+  },
+  "stats": {
+    "initial": {
+      "craft": 0,
+      "design": 0
+    }
+  }
+}
