@@ -1,0 +1,11 @@
+name: d30_engine
+description: "Pure-Dart d30mode engine: pack model, loader, mechanics, game loop, event runner."
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.5
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^6.0.0
