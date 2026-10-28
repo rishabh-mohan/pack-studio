@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:d30_engine/d30_engine.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -100,6 +101,40 @@ class PackStorage {
   }
 
   Future<String> read(PackEntry pack, String relative) => File('${pack.path}/$relative').readAsString();
+
+  Future<void> write(PackEntry pack, String relative, String text) async {
+    try {
+      final file = File('${pack.path}/$relative');
+      await file.parent.create(recursive: true);
+      await file.writeAsString(text);
+    } on FileSystemException catch (e) {
+      throw PackStorageException('Could not write $relative: ${e.osError?.message ?? e.message}');
+    }
+  }
+
+  /// Optional pack files d30mode understands that [pack] does not have yet.
+  Future<List<String>> missingFiles(PackEntry pack) async {
+    final have = await files(pack);
+    return [for (final f in ContentPack.optionalFiles) if (!have.contains(f)) f];
+  }
+
+  /// Loads the pack with the d30mode engine. Null means it loads; otherwise why not.
+  Future<String?> check(PackEntry pack) async {
+    final sources = <String, String>{};
+    for (final name in ContentPack.allFiles) {
+      final file = File('${pack.path}/$name');
+      if (await file.exists()) sources[name] = await file.readAsString();
+    }
+    try {
+      ContentPack.fromFiles(sources);
+      return null;
+    } on PackFormatException catch (e) {
+      return '${e.file}: ${e.message}';
+    } on Object catch (e) {
+      // The engine still raises raw TypeErrors for some malformed input.
+      return 'Malformed pack data: $e';
+    }
+  }
 
   /// Copies the bundled Workshop template into a new pack folder named after [name].
   Future<PackEntry> createFromTemplate(String name) async {

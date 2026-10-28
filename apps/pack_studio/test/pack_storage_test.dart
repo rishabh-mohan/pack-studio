@@ -44,4 +44,21 @@ void main() {
     final reserved = await storage.createFromTemplate('KSS16'); // d30mode's bundled id is off limits
     expect(reserved.id, 'kss16-2');
   });
+
+  test('check loads the Workshop pack and reports a broken file; write and missingFiles work', () async {
+    final tmp = await Directory.systemTemp.createTemp('pack_studio_check');
+    addTearDown(() => tmp.delete(recursive: true));
+    final storage = PackStorage(root: '${tmp.path}/packs'.replaceAll(r'\', '/'));
+    final pack = await storage.createFromTemplate('Checked');
+
+    expect(await storage.check(pack), isNull);
+    expect(await storage.missingFiles(pack), contains('items.json'));
+    expect(await storage.missingFiles(pack), isNot(contains('rules.json')));
+
+    await storage.write(pack, 'rules.json', '[1, 2, 3]'); // valid JSON, wrong shape
+    expect(await storage.check(pack), isNotNull);
+
+    await storage.write(pack, 'items.json', '{}\n');
+    expect(await storage.missingFiles(pack), isNot(contains('items.json')));
+  });
 }
