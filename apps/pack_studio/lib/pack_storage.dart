@@ -5,6 +5,8 @@ import 'package:d30_engine/d30_engine.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'book_generation.dart';
+
 /// The packs folder shared with d30mode: d30mode's own Android/media folder.
 /// Unlike Android/data it can be reached by another app that holds "All files
 /// access", and d30mode reads it as an extra editable pack root.
@@ -14,6 +16,9 @@ const d30modePacksDir = '/sdcard/Android/media/dev.d30mode.d30mode/packs';
 const _bundledIds = {'kss16', 'kss20'};
 
 const _templateDir = 'assets/workshop/';
+
+/// Picture types d30mode can load.
+const imageExtensions = {'png', 'jpg', 'jpeg', 'webp'};
 
 class PackEntry {
   const PackEntry({
@@ -160,6 +165,63 @@ class PackStorage {
     } on FileSystemException catch (e) {
       throw PackStorageException('Could not write $root/$id: ${e.osError?.message ?? e.message}');
     }
-    return (await list()).firstWhere((p) => p.id == id);
+    final pack = (await list()).firstWhere((p) => p.id == id);
+    await ensureBooks(pack);
+    return pack;
+  }
+
+  /// Copies a picture the author chose into the pack's `images/<folder>/` and
+  /// returns the path to store (relative to `images/`, which is what d30mode
+  /// resolves). An existing file with the same name is never overwritten.
+  Future<String> importImage(PackEntry pack, String sourcePath, String folder) async {
+    final source = File(sourcePath);
+    if (!await source.exists()) {
+      throw PackStorageException('That picture could not be found. Choose it again.');
+    }
+    final fileName = sourcePath.split(RegExp(r'[/\\]')).last;
+    final dot = fileName.lastIndexOf('.');
+    final extension = dot < 0 ? '' : fileName.substring(dot + 1).toLowerCase();
+    if (!imageExtensions.contains(extension)) {
+      throw PackStorageException(
+        'Choose a PNG, JPG or WebP picture. "$fileName" is not one of those.',
+      );
+    }
+    var base = (dot < 0 ? fileName : fileName.substring(0, dot))
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9_-]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+    if (base.isEmpty) base = 'image';
+
+    try {
+      final dir = Directory('${pack.path}/images/$folder');
+      await dir.create(recursive: true);
+      var name = '$base.$extension';
+      for (var n = 2; await File('${dir.path}/$name').exists(); n++) {
+        name = '$base-$n.$extension';
+      }
+      await source.copy('${dir.path}/$name');
+      return '$folder/$name';
+    } on FileSystemException catch (e) {
+      throw PackStorageException('Could not copy that picture into the pack: ${e.osError?.message ?? e.message}');
+    }
+  }
+
+  /// Gives every subject in pack.json a book for each tier it is missing
+  /// (never touches or duplicates existing books). Returns how many it added.
+  Future<int> ensureBooks(PackEntry pack) async {
+    final manifest = jsonDecode(await read(pack, 'pack.json'));
+    final subjects = [
+      for (final s in (manifest is Map ? manifest['subjects'] as List? : null) ?? const []) '$s',
+    ];
+    var doc = <String, dynamic>{};
+    try {
+      final decoded = jsonDecode(await read(pack, 'books.json'));
+      if (decoded is Map<String, dynamic>) doc = decoded;
+    } on PathNotFoundException {
+      // No books yet: start from an empty document.
+    }
+    final (updated, added) = ensureSubjectBooks(doc, subjects);
+    if (added > 0) await write(pack, 'books.json', '${const JsonEncoder.withIndent('  ').convert(updated)}\n');
+    return added;
   }
 }

@@ -7,10 +7,15 @@ class JsonTreeEditor extends StatefulWidget {
     super.key,
     required this.value,
     required this.onChanged,
+    this.rootLabel = 'root',
   });
 
   final dynamic value;
   final ValueChanged<dynamic> onChanged;
+
+  /// What the top row is called; callers editing one field of a record name it
+  /// after that field so it is not mistaken for the whole document.
+  final String rootLabel;
 
   @override
   State<JsonTreeEditor> createState() => _JsonTreeEditorState();
@@ -358,7 +363,7 @@ class _JsonTreeEditorState extends State<JsonTreeEditor> {
   }
 
   String _rowTitle(_TreeRow row) {
-    if (row.isRoot) return 'root';
+    if (row.isRoot) return widget.rootLabel;
     if (row.parentIsList) return '[${row.keyOrIndex}]';
     return '${row.keyOrIndex}';
   }

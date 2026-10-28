@@ -160,18 +160,18 @@ class Rules {
   num get hpMin => number('hp', 'min', 0);
   num get moneyInitial => number('money', 'initial', 0);
   num get moneyMin => number('money', 'min', 0);
-  num get sleepRestoresHp => number('day', 'sleepRestoresHp', 60);
-  num get sleepLocationBonusHp => number('day', 'sleepLocationBonusHp', 10);
-  num get studyWeight => number('study', 'studyWeight', 10);
+  num get sleepRestoresHp => number('day', 'sleepRestoresHp', 10);
+  num get sleepLocationBonusHp => number('day', 'sleepLocationBonusHp', 3);
+  num get studyWeight => number('study', 'studyWeight', 3);
   num get studyExp => number('study', 'expPerStudy', 25);
   num get comboBonusPercent => number('study', 'comboBonusPercent', 0.05);
   int get comboMaxStacks => number('study', 'comboMaxStacks', 5).toInt();
-  num get partTimeBaseMoney => number('partTimeJob', 'baseMoney', 1000);
+  num get partTimeBaseMoney => number('partTimeJob', 'baseMoney', 500);
   num get partTimeExp => number('partTimeJob', 'expPerShift', 60);
   num get exerciseExp => number('exercise', 'expPerSession', 80);
   num get randomEventChance =>
-      number('events', 'randomEventChancePerTick', 0.12);
-  int get maxEventsPerDay => number('events', 'maxEventsPerDay', 3).toInt();
+      number('events', 'randomEventChancePerTick', 0.06);
+  int get maxEventsPerDay => number('events', 'maxEventsPerDay', 1).toInt();
   Map<String, num> get rankWeights => numberMap('events', 'rankWeights');
   num get exhaustedPenaltyStat => number('hp', 'exhaustedPenaltyStat', -5);
 }
