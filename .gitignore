@@ -1,3 +1,6 @@
 .dart_tool/
 pubspec.lock
 build/
+
+# KSS placeholder art (local use only; replaced by original art later)
+apps/pack_studio/assets/placeholder/
