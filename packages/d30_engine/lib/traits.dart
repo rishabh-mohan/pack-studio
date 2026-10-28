@@ -468,7 +468,7 @@ class TraitEngine {
         return want == null || subject == null || want == subject;
       case 'tamgoos':
         // The two elective slots, which story 16 fills with science and
-        // society -- the enum order recovered in CLAUDE.md §1.
+        // society -- the enum order.
         return subject == null ||
             pack.manifest.subjects.skip(3).take(2).contains(subject);
       case 'lowSubject':

@@ -72,6 +72,9 @@ class HomeScreen extends StatelessWidget {
                         alignment: Alignment.topCenter,
                         cacheWidth: 900,
                         filterQuality: FilterQuality.medium,
+                        // The art is a local, git-ignored placeholder: without it
+                        // (a fresh clone) the screen is just plain paper.
+                        errorBuilder: (context, error, stack) => const ColoredBox(color: StudioColors.rule),
                       ),
                     ),
                   ),

@@ -358,7 +358,7 @@ class EffectEngine {
       );
       s.addStat(_subjectAt(s, i.toInt()), _num(a, 0));
     },
-    // Tamgoo is the two elective slots, positions 3 and 4 (CLAUDE.md §1),
+    // Tamgoo is the two elective slots, positions 3 and 4,
     // which story 16 fills with science and society -- never the core three.
     'DECREASE_TAMGOO_STAT': (s, a, e) {
       for (final subject in _tamgoos(s)) {

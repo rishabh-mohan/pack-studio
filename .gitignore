@@ -2,5 +2,27 @@
 pubspec.lock
 build/
 
-# KSS placeholder art (local use only; replaced by original art later)
-apps/pack_studio/assets/placeholder/
+# Placeholder art taken from the game this tool targets: local use only, never
+# shared. The folder is kept (empty) so a fresh clone still builds; the home
+# screen falls back to plain paper without the picture.
+apps/pack_studio/assets/placeholder/*
+!apps/pack_studio/assets/placeholder/.gitkeep
+
+# Material written for coding agents or kept as working notes: never shared.
+# (Instructions, planning and design docs, frozen references, change logs.)
+/CLAUDE.md
+/AGENTS.md
+/GEMINI.md
+**/CLAUDE.md
+**/AGENTS.md
+**/GEMINI.md
+.claude/
+.cursor/
+.cursorrules
+.gemini/
+.aider*
+graphify-out/
+/docs/
+/reference/
+/apps/pack_studio/KSS-ASSETS.md
+/packages/d30_engine/CHANGES.md

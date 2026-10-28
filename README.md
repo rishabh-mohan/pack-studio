@@ -1,41 +1,55 @@
 # Pack Studio
 
-Working name for a desktop editor that creates and edits content packs for
-[d30mode](../d30mode) (events, items, traits, characters, locations, colleges,
-art) and hands them to the game to play. Status: **planning only — no code yet.**
+An Android editor for making content packs for [d30mode](https://github.com/rishabh-mohan/d31):
+the locations, traits, characters, items, books, calendar and starting point of a campaign,
+edited through forms instead of raw data. It shares a packs folder with d30mode, so a pack
+made here shows up in the game after it restarts.
 
-This folder was split out of d30mode on 2026-10-26 so the editor can be built
-as its own project. d30mode stays the runtime and the source of truth for the
-pack format; when `docs/` and d30mode's code disagree, the code wins.
+## What it does
+
+- **Forms for each kind of content:** Pack info, Locations (with their actions), Traits,
+  Characters, Items and Books. Choices use plain names and say what they do; descriptions
+  respect what the game can show; dates are typed as `YYYY/MM/DD`; pictures are picked from
+  the phone and copied into the pack.
+- **Starts from a template:** a new pack begins as the bundled Workshop example, with study
+  books generated for every subject.
+- **Saves as you edit**, then loads the whole pack with the real game engine and tells you
+  whether it still works.
+- **Advanced:** everything else (events, rules, mechanics) can still be edited as structured
+  data under "Advanced".
 
 ## Layout
 
 | Path | What it is |
 |---|---|
-| [docs/](docs/README.md) | The foundation: product brief, architecture, pack contract, event authoring, assets, validation, install/test, open questions, starter JSON Schemas |
-| [fixtures/](fixtures) | `workshop` (copy of d30mode's example pack: the "new pack" template) and `lantern` (workshop plus one complete event); see docs/09 |
-| [reference/d30mode-docs/](reference/d30mode-docs) | Snapshots of d30mode's `PACK-FORMAT.md`, `MODULAR-PACKS.md`, `EVENT-PRESENTATION.md` (the docs link to these) |
-| [packages/d30_engine/](packages/d30_engine) | **Pure-Dart engine package** (17 files, ~9k lines, no Flutter, no `dart:io`) extracted from d30mode `lib/engine/` on 2026-10-26. Runs under plain `dart test`; its tests load [fixtures/workshop](fixtures/workshop) and pass (8). Only change from d30mode's copy: `SetupOwnership.fromAccount` and the account imports were dropped (they need the Flutter-bound account store) |
-| [reference/d30mode-tests/](reference/d30mode-tests) | d30mode's `engine_test.dart` (200-run seeded simulation) and `custom_pack_test.dart`, still Flutter-style; port to the package as needed |
+| `apps/pack_studio` | The Flutter app (Android only) |
+| `packages/d30_engine` | The game's pure-Dart engine, used to check that packs load |
+| `fixtures/` | `workshop` (the new-pack template) and `lantern` (one complete event) |
 
-## Not copied (deliberately)
+## Build and test
 
-- KSS packs and art (`packs/kss16`, `packs/kss20`, `assets/images`): content
-  rights, local-use only. See docs/01-PRODUCT-BRIEF.md.
-- The four Flutter-bound engine files (`account_store`, `content_source`,
-  `record_store`, `save_store`) and all game UI: they stay in d30mode.
-- Save/account/History/D-Day docs: runtime concerns unrelated to authoring.
-## Keeping in step with d30mode
+```
+cd apps/pack_studio
+flutter pub get
+flutter analyze
+flutter test
+flutter build apk --debug
+```
 
-The engine package and doc snapshots are frozen at 2026-10-26. d30mode still
-has its own copy of these files under `lib/engine/`; nothing depends on
-`d30_engine` yet. Until d30mode switches to it (path dependency, drop the
-duplicated files, keep a small `SetupOwnership.fromAccount` extension in the
-app), changes to the loader must be mirrored by hand (diff before building).
-Test packs headlessly with `cd packages/d30_engine && dart test`.
+```
+cd packages/d30_engine
+dart test
+```
 
-## Start here
+The app needs "All files access" on first use, because d30mode's packs folder is
+`Android/media/dev.d30mode.d30mode/packs`.
 
-1. docs/09-BUILD-PLAN.md (the order of work), then 01-PRODUCT-BRIEF.md → 02-ARCHITECTURE.md
-2. docs/08-OPEN-QUESTIONS.md — decisions blocking the first line of code
-3. docs/03-PACK-CONTRACT.md and 04-EVENT-AUTHORING.md when building editors
+## Not included
+
+Art from the game this tool targets is not part of this repository. The home screen shows a
+placeholder background from `apps/pack_studio/assets/placeholder/desk.png` if you supply one,
+and plain paper otherwise.
+
+## Licence
+
+No licence has been chosen yet.
