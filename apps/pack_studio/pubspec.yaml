@@ -23,6 +23,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/placeholder/
+    - assets/kss16_events/
     - assets/workshop/
     - assets/workshop/events/
 

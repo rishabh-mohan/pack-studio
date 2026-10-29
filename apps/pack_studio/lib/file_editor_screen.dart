@@ -85,6 +85,7 @@ class _FileEditorScreenState extends State<FileEditorScreen> with SingleTickerPr
     setState(() => _saving = true);
     try {
       await widget.storage.write(widget.pack, widget.relative, '${_encoder.convert(_json)}\n');
+      if (widget.relative == 'pack.json') await widget.storage.ensureBooks(widget.pack);
       final problem = await widget.storage.check(widget.pack);
       if (!mounted) return;
       setState(() => _dirty = false);

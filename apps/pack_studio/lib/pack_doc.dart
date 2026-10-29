@@ -29,12 +29,16 @@ class PackDoc {
 
   Timer? _timer;
   bool _dirty = false;
+  bool _disposed = false;
+  Future<void>? _saving;
 
   /// Returns null when the file loaded (a missing file counts as empty), or why it can't be edited.
   Future<String?> load() async {
     try {
       final decoded = jsonDecode(await storage.read(pack, relative));
-      if (decoded is! Map<String, dynamic>) return '$relative does not hold a set of fields.';
+      if (decoded is! Map<String, dynamic>) {
+        return '$relative does not hold a set of fields.';
+      }
       root = decoded;
     } on PathNotFoundException {
       root = {};
@@ -54,22 +58,45 @@ class PackDoc {
 
   Future<void> flush() async {
     _timer?.cancel();
+    while (_saving != null) {
+      await _saving;
+    }
     if (!_dirty) return;
+    final saving = _save();
+    _saving = saving;
+    try {
+      await saving;
+    } finally {
+      _saving = null;
+    }
+    if (_dirty) await flush();
+  }
+
+  Future<void> _save() async {
     _dirty = false;
     try {
       await storage.write(pack, relative, '${_encoder.convert(root)}\n');
       await afterSave?.call();
       final why = await storage.check(pack);
-      problem.value = why != null;
-      status.value = why == null ? 'All changes saved' : 'Saved, but the pack does not load yet: $why';
+      if (!_disposed) {
+        problem.value = why != null;
+        status.value = _dirty
+            ? 'Saving…'
+            : why == null
+            ? 'All changes saved'
+            : 'Saved, but the pack does not load yet: $why';
+      }
     } on PackStorageException catch (e) {
-      problem.value = true;
-      status.value = e.message;
+      if (!_disposed) {
+        problem.value = true;
+        status.value = e.message;
+      }
     }
   }
 
   void dispose() {
     flush();
+    _disposed = true;
     status.dispose();
     problem.dispose();
   }

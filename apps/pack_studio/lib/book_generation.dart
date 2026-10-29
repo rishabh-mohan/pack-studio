@@ -20,24 +20,36 @@ const bookTiers = [
   BookTier('S', '6', 35, 31),
 ];
 
-/// Adds every missing (subject, tier) book to a `books.json` document and
-/// returns the new document with how many were added. Books that already
-/// exist are never touched, so renamed or retuned ones are safe, and running
-/// it again adds nothing.
-(Map<String, dynamic>, int) ensureSubjectBooks(Map<String, dynamic> root, List<String> subjects) {
-  final books = [for (final b in (root['books'] as List? ?? const [])) b];
+/// Synchronizes books with the current subjects: drops books assigned to a
+/// removed subject and adds missing tiers. Retained books are left untouched.
+/// Returns the updated document and how many books were added (not removed).
+(Map<String, dynamic>, int) ensureSubjectBooks(
+  Map<String, dynamic> root,
+  List<String> subjects,
+) {
+  final existing = root['books'] as List? ?? const [];
+  final active = subjects.toSet();
+  final books = [
+    for (final book in existing)
+      if (!(book is Map &&
+          book['subject'] is String &&
+          !active.contains(book['subject'])))
+        book,
+  ];
+  final removed = existing.length - books.length;
   final have = <String>{
     for (final b in books)
       if (b is Map) '${b['subject']}|${b['bookRank']}',
   };
-  var nextId = 1 +
-      books.fold<int>(0, (m, b) {
+  var nextId =
+      1 +
+      existing.fold<int>(0, (m, b) {
         final id = b is Map ? b['id'] : null;
         return id is int && id > m ? id : m;
       });
 
   var added = 0;
-  for (final subject in subjects) {
+  for (final subject in active) {
     for (final tier in bookTiers) {
       if (have.contains('$subject|${tier.rank}')) continue;
       books.add({
@@ -51,5 +63,7 @@ const bookTiers = [
       added++;
     }
   }
-  return added == 0 ? (root, 0) : ({...root, 'books': books}, added);
+  return added == 0 && removed == 0
+      ? (root, 0)
+      : ({...root, 'books': books}, added);
 }

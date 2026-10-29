@@ -20,6 +20,7 @@ Definitions:
 - `locations.json`: ordinary location actions.
 - `mechanics.json`: the custom block, gate, callback, abilities and text macro.
 - `rules.json`: initial state and ordinary tuning.
+- `levels.json`: the student level table (10 levels, each +1 study efficiency over the last).
 
 For a playable opening unlock, add an event to `events/events.json`, list its
 ID in `rules.events.openingEventIds`, and place

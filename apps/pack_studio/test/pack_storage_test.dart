@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pack_studio/pack_storage.dart';
 
 void main() {
+  deleteTests();
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('packIdFromName gives a d30mode-safe directory name', () {
@@ -60,5 +61,21 @@ void main() {
 
     await storage.write(pack, 'items.json', '{}\n');
     expect(await storage.missingFiles(pack), isNot(contains('items.json')));
+  });
+}
+
+void deleteTests() {
+  test('delete removes the pack folder and refuses paths outside the packs folder', () async {
+    final tmp = await Directory.systemTemp.createTemp('pack_studio_delete');
+    addTearDown(() => tmp.delete(recursive: true));
+    final root = '${tmp.path}/packs'.replaceAll(r'\', '/');
+    final storage = PackStorage(root: root);
+    final pack = await storage.createFromTemplate('Doomed');
+    await storage.delete(pack);
+    expect(await storage.list(), isEmpty);
+
+    final outside = PackEntry(id: 'x', name: 'x', path: tmp.path, modified: DateTime.now());
+    expect(() => storage.delete(outside), throwsA(isA<PackStorageException>()));
+    expect(await tmp.exists(), isTrue);
   });
 }

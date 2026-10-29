@@ -6,6 +6,11 @@
 library;
 
 import 'pack_mechanics.dart';
+import 'pack_colors.dart';
+import 'base_content.dart';
+import 'book_rewards.dart';
+
+export 'pack_colors.dart';
 
 import 'dart:convert';
 
@@ -59,6 +64,14 @@ List<Map<String, dynamic>> _list(
 // Manifest
 // ---------------------------------------------------------------------------
 
+PackColorScheme _manifestColors(Object? value) {
+  try {
+    return PackColorScheme.fromJson(value);
+  } on FormatException catch (error) {
+    throw PackFormatException('pack.json', error.message);
+  }
+}
+
 class PackManifest {
   final String id;
   final String name;
@@ -71,6 +84,7 @@ class PackManifest {
   final String lastName;
   final List<String> subjects;
   final List<Map<String, dynamic>> specialDays;
+  final PackColorScheme colorScheme;
 
   /// Which KSS story this pack is. The trait catalog is global and carries
   /// traits scoped to other stories; this is what rejects them.
@@ -89,6 +103,7 @@ class PackManifest {
     required this.subjects,
     required this.specialDays,
     required this.storyId,
+    this.colorScheme = const PackColorScheme(),
   });
 
   int get totalDays => startDate.daysUntil(endDate) + 1;
@@ -107,6 +122,7 @@ class PackManifest {
     return PackManifest(
       id: j['id'] as String? ?? 'pack',
       name: j['name'] as String? ?? 'Untitled',
+      colorScheme: _manifestColors(j['colorScheme']),
       description: j['description'] as String? ?? '',
       startDate: startDate,
       endDate: endDate,
@@ -460,6 +476,8 @@ class GameEvent {
 // ---------------------------------------------------------------------------
 
 class GameItem {
+  final bool bookRewardExcluded;
+  final String bookRewardBucket;
   final int id;
   final String name;
   final String kind; // consume | normal
@@ -475,6 +493,8 @@ class GameItem {
   final List<String> detailTypes;
 
   GameItem({
+    this.bookRewardExcluded = false,
+    this.bookRewardBucket = 'low',
     required this.id,
     required this.name,
     required this.kind,
@@ -532,6 +552,8 @@ class GameItem {
   static const uiActions = {'predictedGrades', 'checkAbilities', 'recipes'};
 
   factory GameItem.fromJson(Map<String, dynamic> j) => GameItem(
+    bookRewardExcluded: j['bookRewardExcluded'] == true,
+    bookRewardBucket: j['bookRewardBucket'] as String? ?? 'low',
     id: (j['id'] as num).toInt(),
     name: j['name'] as String? ?? 'Item',
     kind: j['kind'] as String? ?? 'consume',
@@ -550,6 +572,7 @@ class GameItem {
 }
 
 class GameTrait {
+  final bool bookRewardEligible;
   final bool setupEligible;
   final int id;
   final String name;
@@ -572,6 +595,7 @@ class GameTrait {
   final int? lifeTimeDays;
 
   GameTrait({
+    this.bookRewardEligible = false,
     this.setupEligible = false,
     required this.id,
     required this.name,
@@ -586,6 +610,7 @@ class GameTrait {
   });
 
   factory GameTrait.fromJson(Map<String, dynamic> j) => GameTrait(
+    bookRewardEligible: j['bookRewardEligible'] == true,
     setupEligible: j['gachable'] == true,
     id: (j['id'] as num).toInt(),
     name: j['name'] as String? ?? 'Trait',
@@ -803,6 +828,7 @@ class GameBook {
 // ---------------------------------------------------------------------------
 
 class ContentPack {
+  final BookRewardRules bookRewards;
   final Map<String, dynamic> presentation;
   final PackManifest manifest;
   final Rules rules;
@@ -949,6 +975,7 @@ class ContentPack {
   final Map<String, int> systemEventBindings;
 
   ContentPack({
+    this.bookRewards = const BookRewardRules(),
     this.presentation = const {},
     required this.manifest,
     required this.rules,
@@ -1088,7 +1115,22 @@ class ContentPack {
     final lvRaw = opt('levels.json');
     final lv = lvRaw == null ? <String, dynamic>{} : _obj('levels.json', lvRaw);
 
+    // Book rewards are the same for every pack (the base layer's table); a
+    // pack's own book_rewards.json is ignored. Items this pack lacks are dropped.
+    final rewardRaw = {...?BaseContent.bookRewards};
+    if (rewardRaw.isNotEmpty) {
+      rewardRaw['items'] = [
+        for (final row in (rewardRaw['items'] as List? ?? const []))
+          if (items.containsKey((row as Map)['id'])) row,
+      ];
+      if (!items.containsKey(rewardRaw['fallbackItemId'])) {
+        rewardRaw.remove('fallbackItemId');
+      }
+    }
+    final rewardRules = BookRewardRules(rewardRaw);
+    rewardRules.validate(items.keys.toSet());
     return ContentPack(
+      bookRewards: rewardRules,
       presentation: opt('presentation.json') == null
           ? const {}
           : _obj('presentation.json', opt('presentation.json')!),

@@ -23,6 +23,7 @@ class HomeScreen extends StatelessWidget {
     required this.onOpenPack,
     required this.onSettings,
     required this.onOpenRecent,
+    required this.onDeleteRecent,
     this.recent = const [],
     this.notice,
   });
@@ -31,6 +32,7 @@ class HomeScreen extends StatelessWidget {
   final VoidCallback onOpenPack;
   final VoidCallback onSettings;
   final void Function(RecentPack) onOpenRecent;
+  final void Function(RecentPack) onDeleteRecent;
   final List<RecentPack> recent;
   /// A problem to show instead of the packs (e.g. root denied).
   final String? notice;
@@ -113,7 +115,7 @@ class HomeScreen extends StatelessWidget {
                     bottom: 0,
                     child: SafeArea(
                       top: false,
-                      child: _Panel(recent: recent, notice: notice, onOpenRecent: onOpenRecent),
+                      child: _Panel(recent: recent, notice: notice, onOpenRecent: onOpenRecent, onDeleteRecent: onDeleteRecent),
                     ),
                   ),
                 ],
@@ -128,12 +130,13 @@ class HomeScreen extends StatelessWidget {
 
 /// The lower half: pack title like the game's account name, then recents.
 class _Panel extends StatelessWidget {
-  const _Panel({required this.recent, required this.notice, required this.onOpenRecent});
+  const _Panel({required this.recent, required this.notice, required this.onOpenRecent, required this.onDeleteRecent});
 
   final List<RecentPack> recent;
   /// A problem to show instead of the packs (e.g. root denied).
   final String? notice;
   final void Function(RecentPack) onOpenRecent;
+  final void Function(RecentPack) onDeleteRecent;
 
   @override
   Widget build(BuildContext context) {
@@ -185,7 +188,8 @@ class _Panel extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _Card(
                   onTap: () => onOpenRecent(pack),
-                  child: Column(
+                  child: Row(children: [
+                    Expanded(child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
@@ -213,7 +217,13 @@ class _Panel extends StatelessWidget {
                         ),
                       ),
                     ],
-                  ),
+                  )),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: StudioColors.inkSoft),
+                      tooltip: 'Delete ${pack.name}',
+                      onPressed: () => onDeleteRecent(pack),
+                    ),
+                  ]),
                 ),
               ),
         ],

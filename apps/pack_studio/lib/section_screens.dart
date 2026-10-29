@@ -348,7 +348,7 @@ class SingleRecordScreen extends StatefulWidget {
 }
 
 class _SingleRecordScreenState extends State<SingleRecordScreen> {
-  // New subjects get their tier books as soon as pack.json is saved.
+  // Keep books in sync with added and removed subjects when pack.json is saved.
   late final PackDoc _doc = PackDoc(
     widget.pack,
     widget.storage,

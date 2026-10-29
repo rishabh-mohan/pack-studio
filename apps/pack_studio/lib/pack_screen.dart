@@ -2,7 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import 'events_screen.dart';
 import 'file_editor_screen.dart';
+import 'own_events.dart';
+import 'pack_colors_screen.dart';
 import 'pack_storage.dart';
 import 'schema.dart';
 import 'section_screens.dart';
@@ -24,6 +27,12 @@ class _PackScreenState extends State<PackScreen> {
   late Future<_PackOverview> _overview = _load();
 
   Future<_PackOverview> _load() async {
+    try {
+      // A pack made before the template had a student level table gets one.
+      await widget.storage.ensureStudyLevels(widget.pack);
+    } on Object {
+      // Best effort: a pack folder that cannot be written still opens.
+    }
     final files = await widget.storage.files(widget.pack);
     final sections = packSectionsFor(await _tuning(files));
     final summaries = <String, String>{};
@@ -32,10 +41,30 @@ class _PackScreenState extends State<PackScreen> {
     }
     final covered = {for (final s in sections) s.file};
     return _PackOverview(
+      eventsSummary: await _eventsSummary(files),
       sections: sections,
       summaries: summaries,
-      otherFiles: [for (final f in files) if (f.endsWith('.json') && !covered.contains(f)) f],
+      // events.json is listed too, for raw edits beside the Events tab. book_rewards.json is fixed in d30mode.
+      otherFiles: [
+        for (final f in files)
+          if (f.endsWith('.json') && f != 'book_rewards.json' && !covered.contains(f)) f,
+      ],
     );
+  }
+
+  Future<String> _eventsSummary(List<String> files) async {
+    const empty = 'Make your own events, or start from the base game\'s';
+    if (!files.contains('events/events.json')) return empty;
+    try {
+      final events = ((jsonDecode(await widget.storage.read(widget.pack, 'events/events.json')) as Map)['events'] as List?) ?? const [];
+      final own = events.where(isOwnEvent).length;
+      if (events.isEmpty) return empty;
+      return own == 0
+          ? '${events.length} ${events.length == 1 ? 'event' : 'events'}, none of them made here yet'
+          : '$own of your own, ${events.length} in all';
+    } on Object {
+      return empty;
+    }
   }
 
   /// The pack's own rules decide what some labels say (e.g. the Rest bonus).
@@ -62,7 +91,9 @@ class _PackScreenState extends State<PackScreen> {
     }
   }
 
-  void _reload() => setState(() => _overview = _load());
+  void _reload() => setState(() {
+    _overview = _load();
+  });
 
   void _say(String text, {int seconds = 4}) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text), duration: Duration(seconds: seconds)));
@@ -125,6 +156,13 @@ class _PackScreenState extends State<PackScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [
+              _SectionButton(
+                key: const ValueKey('section:Color scheme'),
+                section: SectionSpec(label: 'Color scheme', blurb: 'Pack icon and game interface colors',
+                    icon: Icons.palette_outlined, file: 'pack.json', record: packInfoRecord),
+                summary: 'Choose a preset or customize your pack colors',
+                onTap: () => _open(PackColorsScreen(pack: widget.pack, storage: widget.storage)),
+              ),
               for (final s in overview.sections)
                 _SectionButton(
                   key: ValueKey('section:${s.label}'),
@@ -134,6 +172,13 @@ class _PackScreenState extends State<PackScreen> {
                       ? SingleRecordScreen(pack: widget.pack, storage: widget.storage, section: s)
                       : SectionListScreen(pack: widget.pack, storage: widget.storage, section: s)),
                 ),
+              _SectionButton(
+                key: const ValueKey('section:Events'),
+                section: SectionSpec(label: 'Events', blurb: 'Scenes that happen during the game',
+                    icon: Icons.theater_comedy_outlined, file: 'events/events.json', record: packInfoRecord),
+                summary: overview.eventsSummary,
+                onTap: () => _open(EventsScreen(pack: widget.pack, storage: widget.storage)),
+              ),
               const SizedBox(height: 12),
               Theme(
                 data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -168,8 +213,9 @@ class _PackScreenState extends State<PackScreen> {
 }
 
 class _PackOverview {
-  const _PackOverview({required this.sections, required this.summaries, required this.otherFiles});
+  const _PackOverview({required this.sections, required this.summaries, required this.otherFiles, required this.eventsSummary});
 
+  final String eventsSummary;
   final List<SectionSpec> sections;
   final Map<String, String> summaries;
   final List<String> otherFiles;

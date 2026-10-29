@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'pack_screen.dart';
 import 'pack_storage.dart';
+import 'settings_screen.dart';
 import 'theme.dart';
 
 void main() => runApp(const PackStudioApp());
@@ -92,6 +93,29 @@ class _HomeState extends State<_Home> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _deletePack(PackEntry pack) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete ${pack.name}?'),
+        content: const Text('This permanently deletes the pack folder and its images from the device. '
+            'It cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await _storage.delete(pack);
+      _say('Deleted ${pack.name}');
+    } on PackStorageException catch (e) {
+      if (mounted) _say(e.message);
+    }
+    await _refresh();
+  }
+
   Future<void> _openPack() async {
     if (!await _storage.hasAccess(request: true)) return;
     await _refresh();
@@ -122,7 +146,10 @@ class _HomeState extends State<_Home> with WidgetsBindingObserver {
     return HomeScreen(
       onNewPack: _newPack,
       onOpenPack: _openPack,
-      onSettings: () => _say('Settings is not built yet'),
+      onSettings: () => Navigator.of(context)
+          .push(MaterialPageRoute<void>(builder: (_) => SettingsScreen(storage: _storage)))
+          .then((_) => _refresh()),
+      onDeleteRecent: (r) => _deletePack(_packs.firstWhere((p) => p.path == r.path)),
       onOpenRecent: (r) => _show(_packs.firstWhere((p) => p.path == r.path)),
       notice: _notice,
       recent: [

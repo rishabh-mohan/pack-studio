@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'book_generation.dart';
+import 'study_levels.dart' as levels;
 
 /// The packs folder shared with d30mode: d30mode's own Android/media folder.
 /// Unlike Android/data it can be reached by another app that holds "All files
@@ -94,6 +95,19 @@ class PackStorage {
     }
     packs.sort((a, b) => b.modified.compareTo(a.modified));
     return packs;
+  }
+
+  /// Deletes [pack]'s folder and everything in it. Refuses anything that is not a direct child of [root].
+  Future<void> delete(PackEntry pack) async {
+    final parent = Directory(pack.path).parent.path.replaceAll(r'\', '/');
+    if (parent != root.replaceAll(r'\', '/')) {
+      throw PackStorageException('${pack.path} is not inside the packs folder.');
+    }
+    try {
+      await Directory(pack.path).delete(recursive: true);
+    } on FileSystemException catch (e) {
+      throw PackStorageException('Could not delete ${pack.name}: ${e.osError?.message ?? e.message}');
+    }
   }
 
   /// Relative paths of every file in [pack].
@@ -206,8 +220,25 @@ class PackStorage {
     }
   }
 
+  /// Gives a pack with no student level table the default one (see
+  /// study_levels.dart), keeping any other tables and a table it already has.
+  /// Returns whether `levels.json` was written.
+  Future<bool> ensureStudyLevels(PackEntry pack) async {
+    var doc = <String, dynamic>{};
+    try {
+      final decoded = jsonDecode(await read(pack, 'levels.json'));
+      if (decoded is Map<String, dynamic>) doc = decoded;
+    } on PathNotFoundException {
+      // No levels file yet: start from an empty document.
+    }
+    final (updated, changed) = levels.ensureStudyLevels(doc);
+    if (changed) await write(pack, 'levels.json', '${const JsonEncoder.withIndent('  ').convert(updated)}\n');
+    return changed;
+  }
+
   /// Gives every subject in pack.json a book for each tier it is missing
-  /// (never touches or duplicates existing books). Returns how many it added.
+  /// and removes books belonging to deleted subjects. Retained books keep their
+  /// IDs, edits and extra fields. Returns how many books were added.
   Future<int> ensureBooks(PackEntry pack) async {
     final manifest = jsonDecode(await read(pack, 'pack.json'));
     final subjects = [
@@ -221,7 +252,7 @@ class PackStorage {
       // No books yet: start from an empty document.
     }
     final (updated, added) = ensureSubjectBooks(doc, subjects);
-    if (added > 0) await write(pack, 'books.json', '${const JsonEncoder.withIndent('  ').convert(updated)}\n');
+    if (!identical(updated, doc)) await write(pack, 'books.json', '${const JsonEncoder.withIndent('  ').convert(updated)}\n');
     return added;
   }
 }
