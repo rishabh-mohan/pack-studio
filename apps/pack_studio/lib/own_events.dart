@@ -235,10 +235,20 @@ class OwnEvent {
   }
 }
 
+/// Whether [text] is a day that exists, written YYYY/MM/DD. A date like
+/// 2023/02/31 or 2023/99/99 would make a condition nothing ever matches.
+bool isRealDate(String text) {
+  final m = RegExp(r'^(\d{4})/(\d{2})/(\d{2})$').firstMatch(text);
+  if (m == null) return false;
+  final (y, mo, d) = (int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!));
+  final date = DateTime.utc(y, mo, d);
+  return date.year == y && date.month == mo && date.day == d;
+}
+
 /// Why an event cannot be saved yet, or null.
 String? problemWith(OwnEvent e) {
   if (e.name.trim().isEmpty) return 'Give the event a name.';
-  if (e.onSetDay && !RegExp(r'^\d{4}/\d{2}/\d{2}$').hasMatch(e.date)) {
+  if (e.onSetDay && !isRealDate(e.date)) {
     return 'Write the day as YYYY/MM/DD, for example 2023/10/16.';
   }
   if (e.tick < 0 || e.tick > 14) return 'Pick a time of day.';
@@ -289,7 +299,7 @@ String _rewardText(RewardStep s, List<String> subjects) {
     RewardKind.money => 'You got ${s.amount} Gold.',
     RewardKind.stamina => 'You feel rested (+${s.amount} stamina).',
     RewardKind.stat =>
-      'Your ${s.subjectIndex < subjects.length ? subjects[s.subjectIndex] : 'subject'} went up by ${s.amount}.',
+      'Your ${s.subjectIndex >= 0 && s.subjectIndex < subjects.length ? subjects[s.subjectIndex] : 'subject'} went up by ${s.amount}.',
     RewardKind.allStats => 'Every subject went up by ${s.amount}.',
   };
 }
@@ -316,7 +326,7 @@ class EffectNames {
 
 String _effectText(EventEffect f, List<String> subjects, EffectNames names) {
   final verb = f.lose ? 'lost' : 'got';
-  final subject = f.subjectIndex < subjects.length ? subjects[f.subjectIndex] : 'subject';
+  final subject = f.subjectIndex >= 0 && f.subjectIndex < subjects.length ? subjects[f.subjectIndex] : 'subject';
   return switch (f.kind) {
     EffectKind.money => 'You $verb ${f.amount} Gold.',
     EffectKind.stamina => f.lose ? 'You lost ${f.amount} stamina.' : 'You feel rested (+${f.amount} stamina).',
@@ -519,7 +529,12 @@ Map<String, dynamic> deleteEvent(Map<String, dynamic> eventsDoc, int eventId) {
 
   final byId = {for (final n in nodes) if (n is Map && n['id'] is num) (n['id'] as num).toInt(): n};
   final drop = <int>{};
-  final todo = <int>[(event['rootNodeId'] as num?)?.toInt() ?? -1];
+  final todo = <int>[
+    (event['rootNodeId'] as num?)?.toInt() ?? -1,
+    // The scenes the form recorded for it, even if a link to one was lost.
+    for (final id in (event[studioKey] as Map?)?['sceneIds'] as List? ?? const [])
+      if (id is num) id.toInt(),
+  ];
   while (todo.isNotEmpty) {
     final id = todo.removeLast();
     final node = byId[id];

@@ -4,8 +4,9 @@
 /// carries the same table in `levels.json`.
 const _names = ['Novice', 'Learner', 'Diligent', 'Scholar', 'Adept', 'Expert', 'Master', 'Sage', 'Prodigy', 'Legend'];
 
-/// Cumulative exp for each level; one study block is worth 25.
-const _exp = [0, 200, 500, 900, 1400, 2000, 2700, 3500, 4400, 5400];
+/// Cumulative exp for each level; an E-tier study block is worth 100 and each
+/// tier above adds 100 more.
+const _exp = [0, 500, 1500, 3000, 5000, 7500, 10500, 14000, 18000, 23000];
 
 List<Map<String, dynamic>> defaultStudyLevels() => [
   for (var i = 0; i < _names.length; i++) {'level': i + 1, 'name': _names[i], 'exp': _exp[i], 'plusStat': i},

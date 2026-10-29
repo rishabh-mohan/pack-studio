@@ -287,6 +287,38 @@ void main() {
     expect(problemWith(withEffect(EventEffect(kind: EffectKind.moveTo, targetId: 3))), isNull);
   });
 
+  test('a set day must be a day that exists', () {
+    for (final ok in ['2023/10/16', '2024/02/29', '2023/12/31']) {
+      expect(isRealDate(ok), isTrue, reason: ok);
+    }
+    for (final bad in ['2023/99/99', '2023/02/31', '2023/02/29', '2023/13/01', '2023/00/10', '2023-10-16', '23/10/16', '']) {
+      expect(isRealDate(bad), isFalse, reason: bad);
+    }
+    expect(problemWith(sample()..onSetDay = true..date = '2023/02/31'), contains('YYYY/MM/DD'));
+    expect(problemWith(sample()..onSetDay = true..date = '2023/10/16'), isNull);
+  });
+
+  test('a stat effect with a bad subject position still saves, with a plain sentence', () {
+    final e = OwnEvent(id: 2, name: 'x', steps: [
+      RewardStep(kind: RewardKind.stat, subjectIndex: -1, amount: 3),
+      ChoiceStep(question: 'q', options: [
+        ChoiceOption(label: 'a', effects: [EventEffect(kind: EffectKind.stat, subjectIndex: -1, amount: 2)]),
+        ChoiceOption(label: 'b'),
+      ]),
+    ]);
+    final texts = [for (final n in byId(saveOwnEvent({}, e, subjects: ['maths'])).values) '${n['text']}'];
+    expect(texts, containsAll(['Your subject went up by 3.', 'Your subject went up by 2.']));
+  });
+
+  test('deleting also removes the scenes the form recorded, even with a lost link', () {
+    var doc = saveOwnEvent({}, sample(id: 8));
+    // Cut the link from the first scene, stranding the rest from the root.
+    final nodes = (doc['nodes'] as List).cast<Map<String, dynamic>>();
+    nodes.firstWhere((n) => n['id'] == 8001).remove('nextNodeId');
+    final out = deleteEvent(doc, 8);
+    expect(out['nodes'], isEmpty);
+  });
+
   test('an incomplete event says what is missing', () {
     expect(problemWith(OwnEvent(id: 1)), 'Give the event a name.');
     expect(problemWith(OwnEvent(id: 1, name: 'x')), 'A line is empty.');

@@ -1,14 +1,14 @@
 {
   "study": [
     { "level": 1, "name": "Novice", "exp": 0, "plusStat": 0 },
-    { "level": 2, "name": "Learner", "exp": 200, "plusStat": 1 },
-    { "level": 3, "name": "Diligent", "exp": 500, "plusStat": 2 },
-    { "level": 4, "name": "Scholar", "exp": 900, "plusStat": 3 },
-    { "level": 5, "name": "Adept", "exp": 1400, "plusStat": 4 },
-    { "level": 6, "name": "Expert", "exp": 2000, "plusStat": 5 },
-    { "level": 7, "name": "Master", "exp": 2700, "plusStat": 6 },
-    { "level": 8, "name": "Sage", "exp": 3500, "plusStat": 7 },
-    { "level": 9, "name": "Prodigy", "exp": 4400, "plusStat": 8 },
-    { "level": 10, "name": "Legend", "exp": 5400, "plusStat": 9 }
+    { "level": 2, "name": "Learner", "exp": 500, "plusStat": 1 },
+    { "level": 3, "name": "Diligent", "exp": 1500, "plusStat": 2 },
+    { "level": 4, "name": "Scholar", "exp": 3000, "plusStat": 3 },
+    { "level": 5, "name": "Adept", "exp": 5000, "plusStat": 4 },
+    { "level": 6, "name": "Expert", "exp": 7500, "plusStat": 5 },
+    { "level": 7, "name": "Master", "exp": 10500, "plusStat": 6 },
+    { "level": 8, "name": "Sage", "exp": 14000, "plusStat": 7 },
+    { "level": 9, "name": "Prodigy", "exp": 18000, "plusStat": 8 },
+    { "level": 10, "name": "Legend", "exp": 23000, "plusStat": 9 }
   ]
 }

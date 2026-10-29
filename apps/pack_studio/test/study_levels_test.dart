@@ -32,10 +32,10 @@ void main() {
   test('the level box has something to show: LV 1 at the start, a real next threshold', () {
     final pack = ContentPack.fromFiles(workshopFiles());
     expect(pack.studyLevels.tierFor(0).level, 1);
-    expect(pack.studyLevels.nextThresholdAfter(0), 200);
-    expect(pack.studyLevels.tierFor(200).level, 2);
-    expect(pack.studyLevels.tierFor(5400).level, 10);
-    expect(pack.studyLevels.nextThresholdAfter(5400), isNull); // the top
+    expect(pack.studyLevels.nextThresholdAfter(0), 500);
+    expect(pack.studyLevels.tierFor(500).level, 2);
+    expect(pack.studyLevels.tierFor(23000).level, 10);
+    expect(pack.studyLevels.nextThresholdAfter(23000), isNull); // the top
   });
 
   test('the template file and the fixture agree, and match the generated default', () {
