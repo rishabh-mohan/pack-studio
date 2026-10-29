@@ -33,6 +33,20 @@ void main() {
     expect([for (var id = 1; id <= 6; id++) xpOf(game, id)], [100, 200, 300, 400, 500, 600]);
   });
 
+  test('repeating a subject adds nothing by itself: no built-in combo', () {
+    final game = gameWith([action('study')], extraFiles: booksOfEveryTier());
+    final gains = <num>[];
+    for (var i = 0; i < 5; i++) {
+      game.state.hp = game.pack.rules.hpMax;
+      final before = game.state.stats['craft']!;
+      game.act(game.pack.locations[801]!.actions.first, book: game.pack.books[1]);
+      gains.add(game.state.stats['craft']! - before);
+    }
+    // This test book has power 1, so 1 x studyWeight 3 = 3 every time; only a trait (Digging
+    // Deep, Hemorrhoids) may change a repeat.
+    expect(gains, everyElement(3));
+  });
+
   test("a pack's own numbers rule", () {
     final game = gameWith(
       [action('study')],
